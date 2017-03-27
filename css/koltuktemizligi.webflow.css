@@ -7,18 +7,22 @@ blockquote {
 }
 
 .navbar {
-  position: relative;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  right: 0px;
   width: 100%;
   padding-top: 15px;
   padding-bottom: 15px;
-  border-color: #b1b1b1;
-  border-bottom-style: solid;
-  border-bottom-width: 1px;
-  background-color: #fff;
+  border-bottom: 1px solid #bebebe;
+  background-color: transparent;
   color: #fff;
 }
 
 .hero-section {
+  position: relative;
+  padding-top: 229px;
+  padding-bottom: 239px;
   background-image: url('../images/example-bg.png');
   background-position: 50% 50%;
   background-size: cover;
@@ -126,9 +130,9 @@ blockquote {
 
 .footer {
   margin-top: 30px;
-  padding-top: 20px;
+  padding-top: 30px;
   padding-bottom: 20px;
-  background-color: #3f3f3f;
+  background-color: #292929;
 }
 
 .howto-image-block {
@@ -274,9 +278,128 @@ blockquote {
 
 .footer-tel-text {
   color: #fff;
-  font-size: 32px;
-  line-height: 48px;
+  font-size: 24px;
+  line-height: 36px;
   text-align: right;
+}
+
+.footer-title {
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #000;
+  color: #000;
+  font-weight: 400;
+}
+
+.footer-links {
+  padding-left: 0px;
+  text-decoration: none;
+  list-style-type: none;
+}
+
+.footer-link {
+  display: block;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  color: #b6b6b6;
+  font-size: 14px;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.footer-heading {
+  color: #e9e9e9;
+}
+
+.slider {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  right: 0px;
+  height: 100%;
+}
+
+.slide-1 {
+  background-image: -webkit-linear-gradient(270deg, #e9eeff, transparent), url('../images/o.jpg');
+  background-image: linear-gradient(180deg, #e9eeff, transparent), url('../images/o.jpg');
+  background-position: 0px 0px, 50% 50%;
+  background-size: auto, cover;
+  background-repeat: repeat, repeat;
+}
+
+.slide1-title {
+  margin-top: 212px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.utility-page-wrap {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100%;
+  max-width: 100%;
+  -webkit-box-pack: center;
+  -webkit-justify-content: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.utility-page-content {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  width: 260px;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  text-align: center;
+}
+
+.utility-page-form {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  -webkit-box-align: stretch;
+  -webkit-align-items: stretch;
+  -ms-flex-align: stretch;
+  align-items: stretch;
+}
+
+.row-block-title {
+  margin-top: 0px;
+  margin-bottom: 5px;
+  font-size: 20px;
+  line-height: 25px;
+  font-weight: 700;
+}
+
+.row-block {
+  margin-bottom: 40px;
+}
+
+.heading {
+  width: 400px;
+}
+
+.long-heading {
+  width: 100%;
 }
 
 html.w-mod-js *[data-ix="lefttoright"] {
