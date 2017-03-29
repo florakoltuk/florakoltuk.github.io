@@ -402,6 +402,21 @@ blockquote {
   width: 100%;
 }
 
+.slide-2 {
+  background-image: -webkit-linear-gradient(270deg, #e4f5ff, transparent), url('../images/rahatlayan-adam.jpg');
+  background-image: linear-gradient(180deg, #e4f5ff, transparent), url('../images/rahatlayan-adam.jpg');
+  background-position: 0px 0px, 50% 50%;
+  background-size: auto, cover;
+  background-repeat: repeat, no-repeat;
+  background-attachment: scroll, scroll;
+}
+
+.slide2-title {
+  margin-top: 192px;
+  font-weight: 400;
+  text-align: center;
+}
+
 html.w-mod-js *[data-ix="lefttoright"] {
   opacity: 0;
   -webkit-transform: translate(-30px, 0px);
@@ -412,5 +427,18 @@ html.w-mod-js *[data-ix="lefttoright"] {
 @media (max-width: 991px) {
   .menu-icon {
     color: #555;
+  }
+}
+
+@media (max-width: 767px) {
+  .slide-title {
+    margin-top: 212px;
+    font-weight: 400;
+    text-align: center;
+  }
+  .slide2-title {
+    margin-top: 169px;
+    font-weight: 400;
+    text-align: center;
   }
 }
