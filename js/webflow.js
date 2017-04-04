@@ -576,14 +576,7 @@
     window.location = url;
   };
 
-  // Webflow.app - Designer-specific methods
-  Webflow.app = Webflow.env() ? {} : null;
-  if (Webflow.app) {
-
-    // Trigger redraw for specific elements
-    var redraw = new Event('__wf_redraw');
-    Webflow.app.redrawElement = function(i, el) { el.dispatchEvent(redraw); };
-
+  if (Webflow.env()) {
     // Webflow.location - Re-route location change to trigger an event
     Webflow.location = function(url) {
       window.dispatchEvent(new CustomEvent('__wf_location', { detail: url }));
@@ -748,6 +741,300 @@
       if (!inEditor) {
         $body.append(brandElement);
       }
+    }
+
+    // Export module
+    return api;
+  });
+  });
+
+  var webflowIxEvents = __commonjs(function (module) {
+  'use strict';
+
+  /**
+   * Webflow: IX Event triggers for other modules
+   */
+
+  var $ = window.jQuery;
+  var api = {};
+  var eventQueue = [];
+  var namespace = '.w-ix';
+
+  var eventTriggers = {
+    reset: function(i, el) {
+      el.__wf_intro = null;
+    },
+    intro: function(i, el) {
+      if (el.__wf_intro) return;
+      el.__wf_intro = true;
+      $(el).triggerHandler(api.types.INTRO);
+    },
+    outro: function(i, el) {
+      if (!el.__wf_intro) return;
+      el.__wf_intro = null;
+      $(el).triggerHandler(api.types.OUTRO);
+    }
+  };
+
+  api.triggers = {};
+
+  api.types = {
+    INTRO: 'w-ix-intro' + namespace,
+    OUTRO: 'w-ix-outro' + namespace
+  };
+
+  // Trigger any events in queue + restore trigger methods
+  api.init = function() {
+    var count = eventQueue.length;
+    for (var i = 0; i < count; i++) {
+      var memo = eventQueue[i];
+      memo[0](0, memo[1]);
+    }
+    eventQueue = [];
+    $.extend(api.triggers, eventTriggers);
+  };
+
+  // Replace all triggers with async wrapper to queue events until init
+  api.async = function() {
+    for (var key in eventTriggers) {
+      var func = eventTriggers[key];
+      if (!eventTriggers.hasOwnProperty(key)) continue;
+
+      // Replace trigger method with async wrapper
+      api.triggers[key] = function(i, el) {
+        eventQueue.push([func, el]);
+      };
+    }
+  };
+
+  // Default triggers to async queue
+  api.async();
+
+  module.exports = api;
+  });
+
+  var require$$0$2 = (webflowIxEvents && typeof webflowIxEvents === 'object' && 'default' in webflowIxEvents ? webflowIxEvents['default'] : webflowIxEvents);
+
+  var webflowDropdown = __commonjs(function (module) {
+  /**
+   * Webflow: Dropdown component
+   */
+
+  var Webflow = require$$0;
+  var IXEvents = require$$0$2;
+
+  Webflow.define('dropdown', module.exports = function($, _) {
+    var api = {};
+    var $doc = $(document);
+    var $dropdowns;
+    var designer;
+    var inApp = Webflow.env();
+    var touch = Webflow.env.touch;
+    var namespace = '.w-dropdown';
+    var stateOpen = 'w--open';
+    var closeEvent = 'w-close' + namespace;
+    var ix = IXEvents.triggers;
+    var defaultZIndex = 900; // @dropdown-depth
+    var inPreview = false;
+
+    // -----------------------------------
+    // Module methods
+
+    api.ready = init;
+
+    api.design = function() {
+      // Close all when returning from preview
+      if (inPreview) {
+        closeAll();
+      }
+      inPreview = false;
+      init();
+    };
+
+    api.preview = function() {
+      inPreview = true;
+      init();
+    };
+
+    // -----------------------------------
+    // Private methods
+
+    function init() {
+      designer = inApp && Webflow.env('design');
+
+      // Find all instances on the page
+      $dropdowns = $doc.find(namespace);
+      $dropdowns.each(build);
+    }
+
+    function build(i, el) {
+      var $el = $(el);
+
+      // Store state in data
+      var data = $.data(el, namespace);
+      if (!data) data = $.data(el, namespace, { open: false, el: $el, config: {} });
+      data.list = $el.children('.w-dropdown-list');
+      data.toggle = $el.children('.w-dropdown-toggle');
+      data.links = data.list.children('.w-dropdown-link');
+      data.outside = outside(data);
+      data.complete = complete(data);
+      data.leave = leave(data);
+
+      // Remove old events
+      $el.off(namespace);
+      data.toggle.off(namespace);
+
+      // Set config from data attributes
+      configure(data);
+
+      if (data.nav) data.nav.off(namespace);
+      data.nav = $el.closest('.w-nav');
+      data.nav.on(closeEvent, handler(data));
+
+      // Add events based on mode
+      if (designer) {
+        $el.on('setting' + namespace, handler(data));
+      } else {
+        data.toggle.on('tap' + namespace, toggle(data));
+        if (data.config.hover) {
+          data.toggle.on('mouseenter' + namespace, enter(data));
+        }
+        $el.on(closeEvent, handler(data));
+        // Close in preview mode
+        inApp && close(data);
+      }
+    }
+
+    function configure(data) {
+      // Determine if z-index should be managed
+      var zIndex = Number(data.el.css('z-index'));
+      data.manageZ = zIndex === defaultZIndex || zIndex === defaultZIndex + 1;
+
+      data.config = {
+        hover: Boolean(data.el.attr('data-hover')) && !touch,
+        delay: Number(data.el.attr('data-delay')) || 0
+      };
+    }
+
+    function handler(data) {
+      return function(evt, options) {
+        options = options || {};
+
+        if (evt.type === 'w-close') {
+          return close(data);
+        }
+
+        if (evt.type === 'setting') {
+          configure(data);
+          options.open === true && open(data, true);
+          options.open === false && close(data, true);
+          return;
+        }
+      };
+    }
+
+    function toggle(data) {
+      return _.debounce(function() {
+        data.open ? close(data) : open(data);
+      });
+    }
+
+    function open(data) {
+      if (data.open) return;
+      closeOthers(data);
+      data.open = true;
+      data.list.addClass(stateOpen);
+      data.toggle.addClass(stateOpen);
+      ix.intro(0, data.el[0]);
+      Webflow.redraw.up();
+
+      // Increase z-index to keep above other managed dropdowns
+      data.manageZ && data.el.css('z-index', defaultZIndex + 1);
+
+      // Listen for tap outside events
+      if (!designer) $doc.on('tap' + namespace, data.outside);
+      if (data.hovering) data.el.on('mouseleave' + namespace, data.leave);
+
+      // Clear previous delay
+      window.clearTimeout(data.delayId);
+    }
+
+    function close(data, immediate) {
+      if (!data.open) return;
+
+      // Do not close hover-based menus if currently hovering
+      if (data.config.hover && data.hovering) return;
+
+      data.open = false;
+      var config = data.config;
+      ix.outro(0, data.el[0]);
+
+      // Stop listening for tap outside events
+      $doc.off('tap' + namespace, data.outside);
+      data.el.off('mouseleave' + namespace, data.leave);
+
+      // Clear previous delay
+      window.clearTimeout(data.delayId);
+
+      // Skip delay during immediate
+      if (!config.delay || immediate) return data.complete();
+
+      // Optionally wait for delay before close
+      data.delayId = window.setTimeout(data.complete, config.delay);
+    }
+
+    function closeAll() {
+      $doc.find(namespace).each(function(i, el) {
+        $(el).triggerHandler(closeEvent);
+      });
+    }
+
+    function closeOthers(data) {
+      var self = data.el[0];
+      $dropdowns.each(function(i, other) {
+        var $other = $(other);
+        if ($other.is(self) || $other.has(self).length) return;
+        $other.triggerHandler(closeEvent);
+      });
+    }
+
+    function outside(data) {
+      // Unbind previous tap handler if it exists
+      if (data.outside) $doc.off('tap' + namespace, data.outside);
+
+      // Close menu when tapped outside
+      return _.debounce(function(evt) {
+        if (!data.open) return;
+        var $target = $(evt.target);
+        if ($target.closest('.w-dropdown-toggle').length) return;
+        if (!data.el.is($target.closest(namespace))) {
+          close(data);
+        }
+      });
+    }
+
+    function complete(data) {
+      return function() {
+        data.list.removeClass(stateOpen);
+        data.toggle.removeClass(stateOpen);
+
+        // Reset z-index for managed dropdowns
+        data.manageZ && data.el.css('z-index', '');
+      };
+    }
+
+    function enter(data) {
+      return function() {
+        data.hovering = true;
+        open(data);
+      };
+    }
+
+    function leave(data) {
+      return function() {
+        data.hovering = false;
+        close(data);
+      };
     }
 
     // Export module
@@ -1163,73 +1450,6 @@
     return api;
   });
   });
-
-  var webflowIxEvents = __commonjs(function (module) {
-  'use strict';
-
-  /**
-   * Webflow: IX Event triggers for other modules
-   */
-
-  var $ = window.jQuery;
-  var api = {};
-  var eventQueue = [];
-  var namespace = '.w-ix';
-
-  var eventTriggers = {
-    reset: function(i, el) {
-      el.__wf_intro = null;
-    },
-    intro: function(i, el) {
-      if (el.__wf_intro) return;
-      el.__wf_intro = true;
-      $(el).triggerHandler(api.types.INTRO);
-    },
-    outro: function(i, el) {
-      if (!el.__wf_intro) return;
-      el.__wf_intro = null;
-      $(el).triggerHandler(api.types.OUTRO);
-    }
-  };
-
-  api.triggers = {};
-
-  api.types = {
-    INTRO: 'w-ix-intro' + namespace,
-    OUTRO: 'w-ix-outro' + namespace
-  };
-
-  // Trigger any events in queue + restore trigger methods
-  api.init = function() {
-    var count = eventQueue.length;
-    for (var i = 0; i < count; i++) {
-      var memo = eventQueue[i];
-      memo[0](0, memo[1]);
-    }
-    eventQueue = [];
-    $.extend(api.triggers, eventTriggers);
-  };
-
-  // Replace all triggers with async wrapper to queue events until init
-  api.async = function() {
-    for (var key in eventTriggers) {
-      var func = eventTriggers[key];
-      if (!eventTriggers.hasOwnProperty(key)) continue;
-
-      // Replace trigger method with async wrapper
-      api.triggers[key] = function(i, el) {
-        eventQueue.push([func, el]);
-      };
-    }
-  };
-
-  // Default triggers to async queue
-  api.async();
-
-  module.exports = api;
-  });
-
-  var require$$0$2 = (webflowIxEvents && typeof webflowIxEvents === 'object' && 'default' in webflowIxEvents ? webflowIxEvents['default'] : webflowIxEvents);
 
   var webflowIx = __commonjs(function (module) {
   /**
@@ -1801,37 +2021,10 @@
       if (!Webflow.env()) initMaps();
     };
 
-    api.preview = function() {
-      // Update active map nodes
-      $maps = $doc.find(namespace);
-      // Listen for resize events
-      Webflow.resize.off(triggerRedraw);
-      if ($maps.length) {
-        Webflow.resize.on(triggerRedraw);
-        triggerRedraw();
-      }
-    };
-
-    api.design = function() {
-      // Update active map nodes
-      $maps = $doc.find(namespace);
-      // Stop listening for resize events
-      Webflow.resize.off(triggerRedraw);
-      // Redraw to account for page changes
-      $maps.length && _.defer(triggerRedraw);
-    };
-
     api.destroy = removeListeners;
 
     // -----------------------------------
     // Private methods
-
-    // Trigger redraw in designer or preview mode
-    function triggerRedraw() {
-      if ($maps.length && Webflow.app) {
-        $maps.each(Webflow.app.redrawElement);
-      }
-    }
 
     function initMaps() {
       $maps = $doc.find(namespace);
